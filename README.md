@@ -89,7 +89,9 @@ cd server && npm run dev
 cd client && npm run dev
 ```
 
-Visit: **http://localhost:3000**
+Visit:
+**https://rize-os-hrms-assessment.vercel.app/**
+**http://localhost:3000**
 
 Demo login: `admin@techcorp.com` / `password123`
 
