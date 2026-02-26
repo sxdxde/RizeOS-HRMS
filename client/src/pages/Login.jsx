@@ -19,75 +19,90 @@ export default function Login() {
             navigate('/dashboard')
         } catch (err) {
             setError(err.response?.data?.error || 'Login failed. Please try again.')
-        } finally {
-            setLoading(false)
-        }
+        } finally { setLoading(false) }
     }
 
     return (
-        <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-            <div className="w-full max-w-md">
+        <div style={{
+            minHeight: '100vh',
+            background: 'var(--bg-base)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+        }}>
+            <div style={{ width: '100%', maxWidth: 440 }} className="animate-fadeUp">
                 {/* Logo */}
-                <div className="text-center mb-8">
-                    <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4 shadow-lg shadow-indigo-500/30">
-                        AI
-                    </div>
-                    <h1 className="text-3xl font-bold text-white">Welcome back</h1>
-                    <p className="text-gray-400 mt-2">Sign in to your AI-HRMS account</p>
+                <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+                    <div style={{
+                        width: 52, height: 52, borderRadius: '14px',
+                        background: 'var(--accent-blue)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 900, fontSize: '1rem', color: '#fff',
+                        letterSpacing: '-0.04em',
+                        margin: '0 auto 1.25rem',
+                    }}>AI</div>
+                    <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.04em', color: 'var(--text-primary)' }}>
+                        Welcome back
+                    </h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.4rem' }}>
+                        Sign in to your AI-HRMS workspace
+                    </p>
                 </div>
 
-                <div className="card p-6">
+                {/* Card */}
+                <div style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-default)',
+                    borderRadius: '20px',
+                    padding: '2rem',
+                }}>
                     {error && (
-                        <div className="bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg px-4 py-3 text-sm mb-4">
-                            {error}
-                        </div>
+                        <div style={{
+                            background: 'rgba(255,68,102,0.1)', border: '1px solid rgba(255,68,102,0.25)',
+                            color: 'var(--accent-red)', borderRadius: '10px', padding: '0.75rem 1rem',
+                            fontSize: '0.83rem', marginBottom: '1.25rem',
+                        }}>{error}</div>
                     )}
-                    <form onSubmit={handleSubmit} className="space-y-4">
+
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
                         <div>
-                            <label className="label">Email address</label>
-                            <input
-                                type="email"
-                                className="input-field"
-                                placeholder="admin@company.com"
-                                value={form.email}
-                                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                                required
-                            />
+                            <label className="field-label">Email address</label>
+                            <input type="email" className="field" placeholder="admin@company.com"
+                                value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
                         </div>
                         <div>
-                            <label className="label">Password</label>
-                            <input
-                                type="password"
-                                className="input-field"
-                                placeholder="••••••••"
-                                value={form.password}
-                                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                                required
-                            />
+                            <label className="field-label">Password</label>
+                            <input type="password" className="field" placeholder="••••••••"
+                                value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required />
                         </div>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="btn-primary w-full py-2.5 flex items-center justify-center gap-2"
-                        >
+
+                        <button type="submit" disabled={loading} className="btn btn-primary"
+                            style={{ width: '100%', padding: '0.75rem', marginTop: '0.25rem', fontSize: '0.9rem' }}>
                             {loading ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    Signing in...
-                                </>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+                                    <span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
+                                    Signing in…
+                                </span>
                             ) : 'Sign In'}
                         </button>
                     </form>
 
-                    <div className="mt-4 text-center text-sm">
-                        <span className="text-gray-400">Don't have an account? </span>
-                        <Link to="/register" className="text-indigo-400 hover:text-indigo-300 font-medium">
-                            Register your organization
+                    <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.83rem', color: 'var(--text-muted)' }}>
+                        No account?{' '}
+                        <Link to="/register" style={{ color: 'var(--accent-purple)', fontWeight: 600 }}>
+                            Register your org
                         </Link>
-                    </div>
+                    </p>
 
-                    <div className="mt-4 p-3 bg-gray-700/50 rounded-lg text-xs text-gray-400 text-center">
-                        Demo: <span className="text-gray-200">admin@techcorp.com</span> / <span className="text-gray-200">password123</span>
+                    {/* Demo hint */}
+                    <div style={{
+                        marginTop: '1.25rem', background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid var(--border-default)', borderRadius: '10px',
+                        padding: '0.75rem 1rem', fontSize: '0.78rem', color: 'var(--text-muted)',
+                        textAlign: 'center',
+                    }}>
+                        Demo: <span style={{ color: 'var(--text-primary)' }}>admin@techcorp.com</span> / <span style={{ color: 'var(--text-primary)' }}>password123</span>
                     </div>
                 </div>
             </div>

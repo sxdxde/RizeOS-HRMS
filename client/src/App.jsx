@@ -18,9 +18,9 @@ function ProtectedRoute({ children }) {
 
 function Layout({ children }) {
     return (
-        <div className="min-h-screen bg-gray-950">
+        <div style={{ minHeight: '100vh', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column' }}>
             <Navbar />
-            <main className="max-w-7xl mx-auto px-4 py-8">
+            <main style={{ flex: 1, width: '100%', maxWidth: '1280px', margin: '0 auto', padding: '2rem 1.25rem' }}>
                 {children}
             </main>
         </div>
@@ -35,31 +35,11 @@ export default function App() {
             <Route path="/" element={token ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={
-                <ProtectedRoute>
-                    <Layout><Dashboard /></Layout>
-                </ProtectedRoute>
-            } />
-            <Route path="/employees" element={
-                <ProtectedRoute>
-                    <Layout><Employees /></Layout>
-                </ProtectedRoute>
-            } />
-            <Route path="/employees/:id" element={
-                <ProtectedRoute>
-                    <Layout><EmployeeDetail /></Layout>
-                </ProtectedRoute>
-            } />
-            <Route path="/tasks" element={
-                <ProtectedRoute>
-                    <Layout><Tasks /></Layout>
-                </ProtectedRoute>
-            } />
-            <Route path="/ai" element={
-                <ProtectedRoute>
-                    <Layout><AIInsights /></Layout>
-                </ProtectedRoute>
-            } />
+            <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
+            <Route path="/employees" element={<ProtectedRoute><Layout><Employees /></Layout></ProtectedRoute>} />
+            <Route path="/employees/:id" element={<ProtectedRoute><Layout><EmployeeDetail /></Layout></ProtectedRoute>} />
+            <Route path="/tasks" element={<ProtectedRoute><Layout><Tasks /></Layout></ProtectedRoute>} />
+            <Route path="/ai" element={<ProtectedRoute><Layout><AIInsights /></Layout></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     )

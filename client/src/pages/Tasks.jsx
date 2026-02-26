@@ -5,19 +5,19 @@ import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
 import PriorityBadge from '../components/PriorityBadge'
 import LoadingSpinner from '../components/LoadingSpinner'
-import { CheckCircle2, CircleDashed, Clock, X, User, Calendar, ExternalLink, ArrowRight } from 'lucide-react'
+import { CheckCircle2, CircleDashed, Clock, User, Calendar, ExternalLink, ArrowRight, Plus, X } from 'lucide-react'
 
 const STATUSES = ['ASSIGNED', 'IN_PROGRESS', 'COMPLETED']
 const STATUS_LABELS = { ASSIGNED: 'Assigned', IN_PROGRESS: 'In Progress', COMPLETED: 'Completed' }
 const STATUS_ICONS = {
-    ASSIGNED: <CircleDashed className="w-4 h-4" />,
-    IN_PROGRESS: <Clock className="w-4 h-4" />,
-    COMPLETED: <CheckCircle2 className="w-4 h-4" />
+    ASSIGNED: <CircleDashed size={14} />,
+    IN_PROGRESS: <Clock size={14} />,
+    COMPLETED: <CheckCircle2 size={14} />,
 }
-const STATUS_COLORS = {
-    ASSIGNED: 'border-blue-500/30 bg-blue-500/5',
-    IN_PROGRESS: 'border-yellow-500/30 bg-yellow-500/5',
-    COMPLETED: 'border-emerald-500/30 bg-emerald-500/5',
+const COL_ACCENT = {
+    ASSIGNED: { color: 'var(--accent-blue)', alpha: 'rgba(61,49,255,' },
+    IN_PROGRESS: { color: '#f5e642', alpha: 'rgba(245,230,66,' },
+    COMPLETED: { color: 'var(--accent-green)', alpha: 'rgba(43,222,142,' },
 }
 
 const EMPTY_FORM = { title: '', description: '', employeeId: '', priority: 'medium', dueDate: '' }
@@ -36,8 +36,7 @@ export default function Tasks() {
     const fetchAll = async () => {
         try {
             const [tasksRes, empsRes] = await Promise.all([getTasks(), getEmployees()])
-            setTasks(tasksRes.data)
-            setEmployees(empsRes.data)
+            setTasks(tasksRes.data); setEmployees(empsRes.data)
         } catch { } finally { setLoading(false) }
     }
 
@@ -49,16 +48,11 @@ export default function Tasks() {
     }
 
     const handleCreate = async (e) => {
-        e.preventDefault()
-        setSubmitting(true)
+        e.preventDefault(); setSubmitting(true)
         try {
-            await createTask(form)
-            setIsModalOpen(false)
-            setForm(EMPTY_FORM)
-            fetchAll()
-        } catch (err) {
-            alert(err.response?.data?.error || 'Failed to create task')
-        } finally { setSubmitting(false) }
+            await createTask(form); setIsModalOpen(false); setForm(EMPTY_FORM); fetchAll()
+        } catch (err) { alert(err.response?.data?.error || 'Failed') }
+        finally { setSubmitting(false) }
     }
 
     const moveTask = async (taskId, newStatus) => {
@@ -74,146 +68,180 @@ export default function Tasks() {
             const txHash = await logTaskOnChain(task.id, task.employeeId)
             await updateTaskStatus(task.id, 'COMPLETED', txHash)
             setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'COMPLETED', txHash } : t))
-            showToast(`Logged! TX: ${txHash.slice(0, 10)}...${txHash.slice(-6)}`, 'success')
-        } catch (err) {
-            showToast(`${err.message}`, 'error')
-        } finally {
-            setChainLoading(prev => ({ ...prev, [task.id]: false }))
-        }
+            showToast(`Logged! TX: ${txHash.slice(0, 10)}…${txHash.slice(-6)}`, 'success')
+        } catch (err) { showToast(err.message, 'error') }
+        finally { setChainLoading(prev => ({ ...prev, [task.id]: false })) }
     }
 
     const handleDelete = async (taskId) => {
         if (!confirm('Delete this task?')) return
-        try {
-            await deleteTask(taskId)
-            setTasks(prev => prev.filter(t => t.id !== taskId))
-        } catch { showToast('Failed to delete task', 'error') }
+        try { await deleteTask(taskId); setTasks(prev => prev.filter(t => t.id !== taskId)) }
+        catch { showToast('Failed to delete', 'error') }
     }
 
-    const filteredTasks = filterEmployee
-        ? tasks.filter(t => t.employeeId === filterEmployee)
-        : tasks
+    const filtered = filterEmployee ? tasks.filter(t => t.employeeId === filterEmployee) : tasks
 
-    if (loading) return <LoadingSpinner text="Loading tasks..." />
+    if (loading) return <LoadingSpinner text="Loading tasks…" />
 
     return (
-        <div className="space-y-6 animate-fadeIn">
+        <div className="animate-fadeUp" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {/* Toast */}
             {toast && (
-                <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-xl text-sm font-medium max-w-sm animate-fadeIn ${toast.type === 'error' ? 'bg-red-500/20 border border-red-500/40 text-red-300' : 'bg-green-500/20 border border-green-500/40 text-green-300'
-                    }`}>
+                <div style={{
+                    position: 'fixed', top: '1rem', right: '1rem', zIndex: 200,
+                    padding: '0.85rem 1.1rem', borderRadius: '12px',
+                    fontSize: '0.82rem', fontWeight: 600, maxWidth: 340,
+                    background: toast.type === 'error' ? 'rgba(255,68,102,0.15)' : 'rgba(43,222,142,0.15)',
+                    border: `1px solid ${toast.type === 'error' ? 'rgba(255,68,102,0.3)' : 'rgba(43,222,142,0.3)'}`,
+                    color: toast.type === 'error' ? 'var(--accent-red)' : 'var(--accent-green)',
+                    animation: 'fadeUp 0.25s ease',
+                }}>
                     {toast.msg}
                     {toast.type === 'success' && toast.msg.includes('TX:') && (
-                        <a
-                            href={`https://mumbai.polygonscan.com/tx/${toast.msg.match(/0x[a-fA-F0-9]+/)?.[0]}`}
+                        <a href={`https://mumbai.polygonscan.com/tx/${toast.msg.match(/0x[a-fA-F0-9]+/)?.[0]}`}
                             target="_blank" rel="noopener noreferrer"
-                            className="block mt-1 text-indigo-400 hover:text-indigo-300 underline text-xs"
-                        >View on PolygonScan →</a>
+                            style={{ display: 'block', marginTop: '0.3rem', color: 'var(--accent-purple)', fontSize: '0.75rem' }}>
+                            View on PolygonScan
+                        </a>
                     )}
                 </div>
             )}
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
                 <div>
-                    <h1 className="text-2xl font-bold text-white">Tasks</h1>
-                    <p className="text-gray-400 text-sm mt-1">Kanban board — {tasks.length} total tasks</p>
+                    <p className="eyebrow" style={{ marginBottom: '0.35rem' }}>Kanban</p>
+                    <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.04em' }}>
+                        Tasks <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: '1.25rem' }}>({tasks.length})</span>
+                    </h1>
                 </div>
-                <div className="flex items-center gap-3">
-                    <select
-                        className="input-field text-sm py-2"
-                        value={filterEmployee}
-                        onChange={e => setFilterEmployee(e.target.value)}
-                    >
+                <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <select className="field" style={{ maxWidth: 180 }} value={filterEmployee} onChange={e => setFilterEmployee(e.target.value)}>
                         <option value="">All employees</option>
                         {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
                     </select>
-                    <button onClick={() => { setForm(EMPTY_FORM); setIsModalOpen(true) }} className="btn-primary whitespace-nowrap">
-                        + Create Task
+                    <button onClick={() => { setForm(EMPTY_FORM); setIsModalOpen(true) }} className="btn btn-primary">
+                        <Plus size={15} /> Create Task
                     </button>
                 </div>
             </div>
 
-            {/* Kanban Board */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Kanban columns */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.85rem', alignItems: 'start' }}>
                 {STATUSES.map(status => {
-                    const colTasks = filteredTasks.filter(t => t.status === status)
+                    const col = COL_ACCENT[status]
+                    const colTasks = filtered.filter(t => t.status === status)
+
                     return (
-                        <div key={status} className={`rounded-xl border ${STATUS_COLORS[status]} p-4 min-h-[400px]`}>
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="font-semibold text-white flex items-center gap-2">
-                                    <span>{STATUS_ICONS[status]}</span>
-                                    {STATUS_LABELS[status]}
-                                </h2>
-                                <span className="bg-gray-700 text-gray-300 text-xs px-2 py-0.5 rounded-full">{colTasks.length}</span>
+                        <div key={status} style={{
+                            background: col.alpha + '0.05)',
+                            border: `1px solid ${col.alpha + '0.2)'}`,
+                            borderRadius: '20px', padding: '1.1rem',
+                        }}>
+                            {/* Column header */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: col.color }}>
+                                    {STATUS_ICONS[status]}
+                                    <span style={{ fontWeight: 700, fontSize: '0.85rem', letterSpacing: '-0.01em' }}>
+                                        {STATUS_LABELS[status]}
+                                    </span>
+                                </div>
+                                <span style={{
+                                    background: col.alpha + '0.15)', color: col.color,
+                                    border: `1px solid ${col.alpha + '0.25)'}`,
+                                    borderRadius: '99px', padding: '0.2rem 0.6rem',
+                                    fontSize: '0.72rem', fontWeight: 700,
+                                }}>{colTasks.length}</span>
                             </div>
 
-                            <div className="space-y-3">
+                            {/* Task cards */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', minHeight: 120 }}>
                                 {colTasks.length === 0 && (
-                                    <div className="text-center text-gray-600 py-8 text-sm">No tasks here</div>
+                                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', padding: '2rem 0' }}>
+                                        No tasks
+                                    </div>
                                 )}
+
                                 {colTasks.map(task => (
-                                    <div key={task.id} className="card p-4 hover:border-gray-600 transition-colors group">
-                                        <div className="flex items-start justify-between gap-2 mb-2">
-                                            <span className="text-white text-sm font-medium leading-tight">{task.title}</span>
-                                            <button
-                                                onClick={() => handleDelete(task.id)}
-                                                className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all text-xs flex-shrink-0"
-                                            >✕</button>
-                                        </div>
+                                    <div key={task.id} style={{
+                                        background: 'var(--bg-card)', border: '1px solid var(--border-default)',
+                                        borderRadius: '14px', padding: '1rem',
+                                        display: 'flex', flexDirection: 'column', gap: '0.65rem',
+                                        transition: 'border-color 0.15s',
+                                        position: 'relative',
+                                    }}
+                                        onMouseEnter={e => {
+                                            e.currentTarget.style.borderColor = 'var(--border-strong)'
+                                            e.currentTarget.querySelector('.del-btn').style.opacity = '1'
+                                        }}
+                                        onMouseLeave={e => {
+                                            e.currentTarget.style.borderColor = 'var(--border-default)'
+                                            e.currentTarget.querySelector('.del-btn').style.opacity = '0'
+                                        }}
+                                    >
+                                        {/* Delete */}
+                                        <button className="del-btn" onClick={() => handleDelete(task.id)}
+                                            style={{
+                                                position: 'absolute', top: '0.75rem', right: '0.75rem',
+                                                background: 'none', border: 'none', opacity: 0, transition: 'opacity 0.15s',
+                                                color: 'var(--text-muted)', cursor: 'pointer', padding: '0.2rem',
+                                            }}>
+                                            <X size={13} />
+                                        </button>
+
+                                        <p style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)', paddingRight: '1.25rem', lineHeight: 1.4 }}>
+                                            {task.title}
+                                        </p>
 
                                         {task.description && (
-                                            <p className="text-gray-500 text-xs mb-2 line-clamp-2">{task.description}</p>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                                {task.description}
+                                            </p>
                                         )}
 
-                                        <div className="text-xs text-gray-400 mb-3 flex items-center gap-1.5">
-                                            <User className="w-3.5 h-3.5" />
-                                            {task.employee?.name || '—'}
-                                        </div>
-
-                                        <div className="flex items-center gap-2 flex-wrap mb-3">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                             <PriorityBadge priority={task.priority} />
                                             {task.dueDate && (
-                                                <span className="text-gray-500 text-xs flex items-center gap-1">
-                                                    <Calendar className="w-3 h-3" />
+                                                <span className="tag tag-gray" style={{ gap: '0.3rem' }}>
+                                                    <Calendar size={10} />
                                                     {new Date(task.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                                                 </span>
                                             )}
                                         </div>
 
-                                        {/* Move buttons */}
-                                        <div className="flex gap-2 flex-wrap pb-1">
+                                        {task.employee?.name && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                <User size={11} />
+                                                {task.employee.name}
+                                            </div>
+                                        )}
+
+                                        {/* Action buttons */}
+                                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.15rem' }}>
                                             {status === 'ASSIGNED' && (
-                                                <button
-                                                    onClick={() => moveTask(task.id, 'IN_PROGRESS')}
-                                                    className="text-xs flex items-center gap-1 bg-gray-800 text-gray-300 border border-gray-700 px-2 py-1 rounded hover:bg-gray-700 hover:text-white transition-colors"
-                                                >
-                                                    In Progress <ArrowRight className="w-3 h-3" />
+                                                <button onClick={() => moveTask(task.id, 'IN_PROGRESS')} className="btn btn-ghost btn-sm">
+                                                    Start <ArrowRight size={11} />
                                                 </button>
                                             )}
                                             {status === 'IN_PROGRESS' && (
-                                                <button
-                                                    onClick={() => moveTask(task.id, 'COMPLETED')}
-                                                    className="text-xs flex items-center gap-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-1 rounded hover:bg-emerald-500/20 transition-colors"
-                                                >
-                                                    Complete <CheckCircle2 className="w-3 h-3" />
+                                                <button onClick={() => moveTask(task.id, 'COMPLETED')} className="btn btn-ghost btn-sm"
+                                                    style={{ color: 'var(--accent-green)', borderColor: 'rgba(43,222,142,0.25)' }}>
+                                                    Complete <CheckCircle2 size={11} />
                                                 </button>
                                             )}
                                             {status === 'IN_PROGRESS' && (
-                                                <button
-                                                    onClick={() => handleLogOnChain(task)}
-                                                    disabled={chainLoading[task.id]}
-                                                    className="text-xs bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-1 flex items-center gap-1.5 rounded hover:bg-indigo-500/30 transition-colors disabled:opacity-50"
-                                                >
-                                                    {chainLoading[task.id] ? <LoadingSpinner size="sm" text="" /> : <ExternalLink className="w-3 h-3" />}
-                                                    {chainLoading[task.id] ? 'Logging...' : 'Log on Chain'}
+                                                <button onClick={() => handleLogOnChain(task)} disabled={chainLoading[task.id]} className="btn btn-ghost btn-sm"
+                                                    style={{ color: 'var(--accent-purple)', borderColor: 'rgba(184,161,255,0.3)' }}>
+                                                    {chainLoading[task.id] ? <LoadingSpinner size="sm" text="" /> : <ExternalLink size={11} />}
+                                                    {chainLoading[task.id] ? 'Logging…' : 'Log on Chain'}
                                                 </button>
                                             )}
                                             {status === 'COMPLETED' && task.txHash && (
-                                                <a
-                                                    href={`https://mumbai.polygonscan.com/tx/${task.txHash}`}
-                                                    target="_blank" rel="noopener noreferrer"
-                                                    className="text-xs flex items-center gap-1.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-1 rounded hover:bg-indigo-500/20 transition-colors"
-                                                ><ExternalLink className="w-3 h-3" /> PolygonScan</a>
+                                                <a href={`https://mumbai.polygonscan.com/tx/${task.txHash}`}
+                                                    target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm"
+                                                    style={{ color: 'var(--accent-purple)', borderColor: 'rgba(184,161,255,0.3)' }}>
+                                                    <ExternalLink size={11} /> PolygonScan
+                                                </a>
                                             )}
                                         </div>
                                     </div>
@@ -225,33 +253,30 @@ export default function Tasks() {
             </div>
 
             {/* Create Task Modal */}
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create New Task">
-                <form onSubmit={handleCreate} className="space-y-4">
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create Task">
+                <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div>
-                        <label className="label">Task Title</label>
-                        <input className="input-field" placeholder="Build user authentication..." value={form.title}
-                            onChange={e => setForm({ ...form, title: e.target.value })} required />
+                        <label className="field-label">Task Title</label>
+                        <input className="field" placeholder="Build user authentication…" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
                     </div>
                     <div>
-                        <label className="label">Description</label>
-                        <textarea className="input-field resize-none h-20" placeholder="Task details..."
+                        <label className="field-label">Description</label>
+                        <textarea className="field" style={{ resize: 'none', height: 80 }} placeholder="Task details…"
                             value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
                         <div>
-                            <label className="label">Assign To</label>
-                            <select className="input-field" value={form.employeeId}
-                                onChange={e => setForm({ ...form, employeeId: e.target.value })} required>
-                                <option value="">Select employee...</option>
+                            <label className="field-label">Assign To</label>
+                            <select className="field" value={form.employeeId} onChange={e => setForm({ ...form, employeeId: e.target.value })} required>
+                                <option value="">Select employee…</option>
                                 {employees.filter(e => e.isActive).map(e => (
                                     <option key={e.id} value={e.id}>{e.name}</option>
                                 ))}
                             </select>
                         </div>
                         <div>
-                            <label className="label">Priority</label>
-                            <select className="input-field" value={form.priority}
-                                onChange={e => setForm({ ...form, priority: e.target.value })}>
+                            <label className="field-label">Priority</label>
+                            <select className="field" value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}>
                                 <option value="low">Low</option>
                                 <option value="medium">Medium</option>
                                 <option value="high">High</option>
@@ -259,14 +284,13 @@ export default function Tasks() {
                         </div>
                     </div>
                     <div>
-                        <label className="label">Due Date</label>
-                        <input type="date" className="input-field" value={form.dueDate}
-                            onChange={e => setForm({ ...form, dueDate: e.target.value })} />
+                        <label className="field-label">Due Date</label>
+                        <input type="date" className="field" value={form.dueDate} onChange={e => setForm({ ...form, dueDate: e.target.value })} />
                     </div>
-                    <div className="flex justify-end gap-3 pt-2">
-                        <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary">Cancel</button>
-                        <button type="submit" disabled={submitting} className="btn-primary">
-                            {submitting ? 'Creating...' : 'Create Task'}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.6rem', marginTop: '0.25rem' }}>
+                        <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-ghost">Cancel</button>
+                        <button type="submit" disabled={submitting} className="btn btn-primary">
+                            {submitting ? 'Creating…' : 'Create Task'}
                         </button>
                     </div>
                 </form>

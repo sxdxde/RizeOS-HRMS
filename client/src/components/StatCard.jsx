@@ -1,38 +1,47 @@
 import React from 'react'
 
-export default function StatCard({ title, value, icon, color }) {
-    const colorMap = {
-        blue: 'border-blue-500 text-blue-400',
-        green: 'border-green-500 text-green-400',
-        yellow: 'border-yellow-500 text-yellow-400',
-        orange: 'border-orange-500 text-orange-400',
-        purple: 'border-purple-500 text-purple-400',
-        indigo: 'border-indigo-500 text-indigo-400',
-        red: 'border-red-500 text-red-400',
-        gray: 'border-gray-700 text-gray-400',
+export default function StatCard({ title, value, icon, accent }) {
+    // accent: 'blue' | 'yellow' | 'purple' | 'green' | 'red' | 'default'
+    const themes = {
+        blue: { bg: 'var(--accent-blue)', color: '#fff', iconBg: 'rgba(255,255,255,0.15)' },
+        yellow: { bg: 'var(--accent-yellow)', color: '#111', iconBg: 'rgba(0,0,0,0.1)' },
+        purple: { bg: 'var(--accent-purple)', color: '#111', iconBg: 'rgba(0,0,0,0.1)' },
+        green: { bg: 'rgba(43,222,142,0.12)', color: 'var(--accent-green)', iconBg: 'rgba(43,222,142,0.2)' },
+        red: { bg: 'rgba(255,68,102,0.12)', color: 'var(--accent-red)', iconBg: 'rgba(255,68,102,0.2)' },
+        default: { bg: 'var(--bg-card)', color: 'var(--text-primary)', iconBg: 'rgba(255,255,255,0.06)' },
     }
-    const bgMap = {
-        blue: 'bg-blue-500/10',
-        green: 'bg-green-500/10',
-        yellow: 'bg-yellow-500/10',
-        orange: 'bg-orange-500/10',
-        purple: 'bg-purple-500/10',
-        indigo: 'bg-indigo-500/10',
-        red: 'bg-red-500/10',
-        gray: 'bg-gray-800',
-    }
+    const t = themes[accent] || themes.default
 
     return (
-        <div className={`card p-5 border-l-4 ${colorMap[color] || colorMap.blue} hover:scale-[1.01] transition-transform duration-200 animate-fadeIn`}>
-            <div className="flex items-start justify-between">
-                <div>
-                    <p className="text-gray-400 text-sm font-medium">{title}</p>
-                    <p className="text-3xl font-bold text-white mt-1">{value ?? '—'}</p>
-                </div>
-                <div className={`w-10 h-10 rounded-lg ${bgMap[color] || bgMap.blue} flex items-center justify-center text-xl`}>
+        <div className="animate-fadeUp" style={{
+            background: t.bg,
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: '20px',
+            padding: '1.25rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem',
+            transition: 'transform 0.18s ease',
+        }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+        >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <p style={{ fontSize: '0.78rem', fontWeight: 600, color: t.color, opacity: 0.65, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                    {title}
+                </p>
+                <div style={{
+                    width: 36, height: 36, borderRadius: '10px',
+                    background: t.iconBg,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: t.color,
+                }}>
                     {icon}
                 </div>
             </div>
+            <p style={{ fontSize: '2.25rem', fontWeight: 800, color: t.color, letterSpacing: '-0.04em', lineHeight: 1 }}>
+                {value ?? '—'}
+            </p>
         </div>
     )
 }

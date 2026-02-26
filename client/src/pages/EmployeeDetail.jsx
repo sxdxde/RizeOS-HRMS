@@ -13,7 +13,6 @@ export default function EmployeeDetail() {
     const [productivity, setProductivity] = useState(null)
     const [skillGap, setSkillGap] = useState(null)
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState('')
 
     useEffect(() => {
         const fetchAll = async () => {
@@ -21,96 +20,107 @@ export default function EmployeeDetail() {
                 const [empRes, prodRes, gapRes] = await Promise.all([
                     getEmployee(id),
                     getProductivity(id),
-                    getSkillGap(id),
+                    getSkillGap(id).catch(() => ({ data: null })), // handle if skill gap fails
                 ])
                 setEmployee(empRes.data)
                 setProductivity(prodRes.data)
                 setSkillGap(gapRes.data)
-            } catch (err) {
-                setError('Failed to load employee data')
-            } finally {
-                setLoading(false)
-            }
+            } catch (err) { } finally { setLoading(false) }
         }
         fetchAll()
     }, [id])
 
-    if (loading) return <LoadingSpinner text="Loading employee profile..." />
-    if (error) return <div className="text-red-400 text-center py-10">{error}</div>
-    if (!employee) return <div className="text-gray-400 text-center py-10">Employee not found</div>
+    if (loading) return <LoadingSpinner text="Loading employee profile…" />
+    if (!employee) return <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '3rem' }}>Employee not found</div>
 
     const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
 
     return (
-        <div className="space-y-6 animate-fadeIn">
-            {/* Back + header */}
+        <div className="animate-fadeUp" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* Header */}
             <div>
-                <Link to="/employees" className="text-gray-400 hover:text-white text-sm flex items-center gap-1.5 mb-4 w-fit transition-colors">
-                    <ArrowLeft className="w-4 h-4" /> Back to Employees
+                <Link to="/employees" style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                    color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600,
+                    marginBottom: '1rem', textDecoration: 'none', transition: 'color 0.15s'
+                }} onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>
+                    <ArrowLeft size={14} /> Back to Employees
                 </Link>
-                <h1 className="text-2xl font-bold text-white">{employee.name}</h1>
-                <p className="text-gray-400 text-sm mt-1">{employee.role} · {employee.department}</p>
+                <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.04em' }}>{employee.name}</h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.2rem' }}>{employee.role} · {employee.department}</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Profile Card */}
-                <div className="card p-6 space-y-5">
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xl font-bold text-white flex-shrink-0">
-                            {employee.name[0].toUpperCase()}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', lg: { gridTemplateColumns: '320px 1fr' } }}>
+                {/* Left Col: Profile Card */}
+                <div style={{
+                    background: 'var(--bg-card)', border: '1px solid var(--border-default)',
+                    borderRadius: '20px', padding: '1.5rem', alignSelf: 'start'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                        <div style={{
+                            width: 52, height: 52, borderRadius: '14px', background: 'var(--accent-blue)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '1.1rem', fontWeight: 800, color: '#fff', flexShrink: 0
+                        }}>
+                            {employee.name.charAt(0).toUpperCase()}
                         </div>
-                        <div>
-                            <h2 className="text-lg font-semibold text-white">{employee.name}</h2>
-                            <p className="text-gray-400 text-sm">{employee.email}</p>
+                        <div style={{ overflow: 'hidden' }}>
+                            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                                {employee.name}
+                            </h2>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                                {employee.email}
+                            </p>
                         </div>
                     </div>
 
-                    <div className="space-y-3 text-sm">
-                        <div className="flex justify-between">
-                            <span className="text-gray-400">Role</span>
-                            <span className="text-white">{employee.role}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.8rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: 'var(--text-muted)' }}>Role</span>
+                            <span style={{ fontWeight: 500 }}>{employee.role}</span>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-400">Department</span>
-                            <span className="text-white">{employee.department}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: 'var(--text-muted)' }}>Department</span>
+                            <span style={{ fontWeight: 500 }}>{employee.department}</span>
                         </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-gray-400">Status</span>
-                            <span className={`font-medium flex items-center gap-1.5 ${employee.isActive ? 'text-green-400' : 'text-gray-500'}`}>
-                                <span className={`w-2 h-2 rounded-full ${employee.isActive ? 'bg-green-400' : 'bg-gray-500'}`}></span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ color: 'var(--text-muted)' }}>Status</span>
+                            <span style={{
+                                display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600,
+                                color: employee.isActive ? 'var(--accent-green)' : 'var(--text-muted)'
+                            }}>
+                                <span style={{ width: 6, height: 6, borderRadius: '50%', background: employee.isActive ? 'var(--accent-green)' : 'var(--text-muted)' }} />
                                 {employee.isActive ? 'Active' : 'Inactive'}
                             </span>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-400">Joined</span>
-                            <span className="text-white">{formatDate(employee.createdAt)}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: 'var(--text-muted)' }}>Joined</span>
+                            <span style={{ fontWeight: 500 }}>{formatDate(employee.createdAt)}</span>
                         </div>
                         {employee.walletAddress && (
-                            <div className="flex justify-between items-start gap-2">
-                                <span className="text-gray-400 flex-shrink-0">Wallet</span>
-                                <span className="text-indigo-400 text-xs font-mono break-all text-right">
-                                    {employee.walletAddress.slice(0, 10)}...{employee.walletAddress.slice(-6)}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' }}>
+                                <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>Wallet</span>
+                                <span style={{ color: 'var(--accent-purple)', fontFamily: 'monospace', fontSize: '0.75rem', textAlign: 'right', wordBreak: 'break-all' }}>
+                                    {employee.walletAddress.slice(0, 10)}…{employee.walletAddress.slice(-6)}
                                 </span>
                             </div>
                         )}
                     </div>
 
-                    {/* Skills */}
-                    <div>
-                        <p className="text-gray-400 text-sm mb-2">Skills</p>
-                        <div className="flex flex-wrap gap-1.5">
-                            {employee.skills.map(skill => (
-                                <span key={skill} className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs px-2.5 py-1 rounded-full">
-                                    {skill}
-                                </span>
-                            ))}
-                            {employee.skills.length === 0 && <span className="text-gray-500 text-xs">No skills listed</span>}
+                    <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-default)' }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            Skills
+                        </p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                            {employee.skills?.length > 0 ? employee.skills.map(s => (
+                                <span key={s} className="tag tag-blue">{s}</span>
+                            )) : <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>No skills listed</span>}
                         </div>
                     </div>
                 </div>
 
-                {/* Right column */}
-                <div className="lg:col-span-2 space-y-6">
+                {/* Right Col */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     {/* Productivity Score */}
                     {productivity && (
                         <ProductivityScore score={productivity.score} label={productivity.label} breakdown={productivity.breakdown} />
@@ -118,49 +128,46 @@ export default function EmployeeDetail() {
 
                     {/* Skill Gap */}
                     {skillGap && (
-                        <div className="card p-5">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-sm font-medium text-gray-400">Skill Gap Analysis</h3>
-                                <span className={`text-sm font-semibold ${skillGap.matchPercent >= 80 ? 'text-green-400' : skillGap.matchPercent >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
-                                    {skillGap.matchPercent}% match
-                                </span>
+                        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: '20px', padding: '1.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                <h3 style={{ fontSize: '0.9rem', fontWeight: 700 }}>Skill Gap Analysis</h3>
+                                <span style={{
+                                    fontSize: '0.8rem', fontWeight: 800,
+                                    color: skillGap.matchPercent >= 80 ? 'var(--accent-green)' : skillGap.matchPercent >= 50 ? 'var(--accent-yellow)' : 'var(--accent-red)'
+                                }}>{skillGap.matchPercent}% match</span>
                             </div>
 
                             {/* Progress bar */}
-                            <div className="w-full bg-gray-700 rounded-full h-2 mb-4">
-                                <div
-                                    className={`h-2 rounded-full transition-all duration-700 ${skillGap.matchPercent >= 80 ? 'bg-green-500' : skillGap.matchPercent >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                                    style={{ width: `${skillGap.matchPercent}%` }}
-                                />
+                            <div style={{ width: '100%', height: 6, background: 'rgba(255,255,255,0.05)', borderRadius: '99px', marginBottom: '1.25rem', overflow: 'hidden' }}>
+                                <div style={{
+                                    height: '100%', borderRadius: '99px', transition: 'width 0.8s ease',
+                                    width: `${skillGap.matchPercent}%`,
+                                    background: skillGap.matchPercent >= 80 ? 'var(--accent-green)' : skillGap.matchPercent >= 50 ? 'var(--accent-yellow)' : 'var(--accent-red)'
+                                }} />
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1.25rem' }}>
                                 <div>
-                                    <p className="text-gray-400 text-xs mb-2 font-medium uppercase tracking-wider">Required Skills</p>
-                                    <div className="flex flex-wrap gap-1.5">
+                                    <p className="eyebrow" style={{ marginBottom: '0.6rem' }}>Required Skills</p>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                                         {skillGap.required.map(skill => {
                                             const isMissing = skillGap.missing.includes(skill)
                                             return (
-                                                <span key={skill} className={`text-xs px-2.5 py-1 rounded-full border flex items-center gap-1 ${isMissing
-                                                    ? 'bg-red-500/10 text-red-400 border-red-500/30'
-                                                    : 'bg-green-500/10 text-green-400 border-green-500/30'
-                                                    }`}>
-                                                    {isMissing ? <X className="w-3 h-3 flex-shrink-0" /> : <Check className="w-3 h-3 flex-shrink-0" />}{skill}
+                                                <span key={skill} className={`tag ${isMissing ? 'tag-red' : 'tag-green'}`}>
+                                                    {isMissing ? <X size={10} /> : <Check size={10} />} {skill}
                                                 </span>
                                             )
                                         })}
                                     </div>
                                 </div>
                                 <div>
-                                    <p className="text-gray-400 text-xs mb-2 font-medium uppercase tracking-wider">Missing Skills</p>
+                                    <p className="eyebrow" style={{ marginBottom: '0.6rem' }}>Missing Skills</p>
                                     {skillGap.missing.length === 0 ? (
-                                        <p className="text-green-400 text-sm">All skills matched!</p>
+                                        <p style={{ color: 'var(--accent-green)', fontSize: '0.8rem', fontWeight: 600 }}>All skills matched!</p>
                                     ) : (
-                                        <div className="flex flex-wrap gap-1.5">
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                                             {skillGap.missing.map(skill => (
-                                                <span key={skill} className="bg-red-500/10 text-red-400 border border-red-500/30 text-xs px-2.5 py-1 rounded-full">
-                                                    {skill}
-                                                </span>
+                                                <span key={skill} className="tag tag-red">{skill}</span>
                                             ))}
                                         </div>
                                     )}
@@ -172,41 +179,40 @@ export default function EmployeeDetail() {
             </div>
 
             {/* Task History */}
-            <div className="card p-5">
-                <h2 className="section-title mb-4">Task History ({employee.tasks?.length || 0})</h2>
-                {(!employee.tasks || employee.tasks.length === 0) ? (
-                    <div className="text-center text-gray-500 py-8">No tasks assigned yet</div>
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: '20px', padding: '1.5rem' }}>
+                <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.25rem' }}>Task History ({employee.tasks?.length || 0})</h2>
+
+                {!employee.tasks?.length ? (
+                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>No tasks assigned yet</div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                             <thead>
-                                <tr className="text-gray-400 border-b border-gray-700">
-                                    <th className="text-left py-2 pr-4">Title</th>
-                                    <th className="text-left py-2 pr-4 hidden sm:table-cell">Status</th>
-                                    <th className="text-left py-2 pr-4 hidden md:table-cell">Priority</th>
-                                    <th className="text-left py-2 hidden md:table-cell">Due Date</th>
+                                <tr style={{ borderBottom: '1px solid var(--border-strong)', textAlign: 'left', color: 'var(--text-secondary)' }}>
+                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Title</th>
+                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Status</th>
+                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Priority</th>
+                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Due Date</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {employee.tasks.map(task => (
-                                    <tr key={task.id} className="border-b border-gray-700/50 hover:bg-gray-700/20 transition-colors">
-                                        <td className="py-2.5 pr-4">
-                                            <span className="text-white font-medium">{task.title}</span>
+                                    <tr key={task.id} style={{ borderBottom: '1px solid var(--border-default)', transition: 'background 0.15s' }}
+                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                    >
+                                        <td style={{ padding: '0.85rem 1rem' }}>
+                                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{task.title}</span>
                                             {task.txHash && (
-                                                <a
-                                                    href={`https://mumbai.polygonscan.com/tx/${task.txHash}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="ml-2 inline-flex items-center gap-1 text-indigo-400 hover:text-indigo-300 text-xs transition-colors"
-                                                >
-                                                    <ExternalLink className="w-3 h-3" /> Chain
+                                                <a href={`https://mumbai.polygonscan.com/tx/${task.txHash}`} target="_blank" rel="noopener noreferrer"
+                                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', marginLeft: '0.5rem', fontSize: '0.7rem', color: 'var(--accent-purple)', fontWeight: 600 }}>
+                                                    <ExternalLink size={10} /> Chain
                                                 </a>
                                             )}
-                                            <div className="sm:hidden mt-0.5"><StatusBadge status={task.status} /></div>
                                         </td>
-                                        <td className="py-2.5 pr-4 hidden sm:table-cell"><StatusBadge status={task.status} /></td>
-                                        <td className="py-2.5 pr-4 hidden md:table-cell"><PriorityBadge priority={task.priority} /></td>
-                                        <td className="py-2.5 hidden md:table-cell text-gray-400">
+                                        <td style={{ padding: '0.85rem 1rem' }}><StatusBadge status={task.status} /></td>
+                                        <td style={{ padding: '0.85rem 1rem' }}><PriorityBadge priority={task.priority} /></td>
+                                        <td style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)' }}>
                                             {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
                                         </td>
                                     </tr>

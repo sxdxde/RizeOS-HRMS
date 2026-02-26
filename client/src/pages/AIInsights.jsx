@@ -1,213 +1,177 @@
 import React, { useState, useEffect } from 'react'
 import { getInsights, getSmartAssign } from '../services/api'
 import LoadingSpinner from '../components/LoadingSpinner'
-import { BrainCircuit, Trophy, AlertTriangle, PieChart, Sparkles } from 'lucide-react'
+import StatCard from '../components/StatCard'
+import { BrainCircuit, Trophy, AlertCircle, ArrowRight, Wand2, Target } from 'lucide-react'
 
 export default function AIInsights() {
-    const [insights, setInsights] = useState(null)
+    const [data, setData] = useState(null)
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState('')
-    const [taskTitle, setTaskTitle] = useState('')
-    const [recommendations, setRecommendations] = useState([])
-    const [searching, setSearching] = useState(false)
+    const [taskDesc, setTaskDesc] = useState('')
+    const [assignResults, setAssignResults] = useState(null)
+    const [assignLoading, setAssignLoading] = useState(false)
 
     useEffect(() => {
-        const fetchInsights = async () => {
-            try {
-                const res = await getInsights()
-                setInsights(res.data)
-            } catch { setError('Failed to load AI insights') }
-            finally { setLoading(false) }
-        }
-        fetchInsights()
+        getInsights()
+            .then(res => setData(res.data))
+            .catch(() => { })
+            .finally(() => setLoading(false))
     }, [])
 
     const handleSmartAssign = async (e) => {
-        e.preventDefault()
-        if (!taskTitle.trim()) return
-        setSearching(true)
+        e.preventDefault(); if (!taskDesc.trim()) return
+        setAssignLoading(true)
         try {
-            const res = await getSmartAssign(taskTitle)
-            setRecommendations(res.data)
-        } catch { setError('Smart assign failed') }
-        finally { setSearching(false) }
+            const res = await getSmartAssign('New Task', taskDesc)
+            setAssignResults(res.data)
+
+        } catch { alert('Smart assignment failed') }
+        finally { setAssignLoading(false) }
     }
 
-    if (loading) return <LoadingSpinner text="Analyzing org intelligence..." />
-    if (error && !insights) return <div className="text-red-400 text-center py-10">{error}</div>
+    if (loading) return <LoadingSpinner text="Generating AI insights…" />
+    if (!data) return <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>No data available</div>
 
-    const scoreColor = (score) =>
-        score >= 80 ? 'text-green-400' : score >= 50 ? 'text-yellow-400' : 'text-red-400'
+    const scoreColor = (score) => score >= 80 ? 'var(--accent-green)' : score >= 50 ? 'var(--accent-yellow)' : 'var(--accent-red)'
 
     return (
-        <div className="space-y-6 animate-fadeIn">
+        <div className="animate-fadeUp" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* Header */}
             <div>
-                <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                    <BrainCircuit className="w-6 h-6 text-indigo-400" /> AI Insights
+                <p className="eyebrow" style={{ marginBottom: '0.35rem', color: 'var(--accent-purple)' }}>Powered by AI</p>
+                <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.04em', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    Insights <BrainCircuit size={24} color="var(--accent-purple)" />
                 </h1>
-                <p className="text-gray-400 text-sm mt-1">AI-powered analytics across your organization</p>
             </div>
 
-            {/* Avg Score */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="card p-5 sm:col-span-1 flex flex-col items-center justify-center text-center">
-                    <p className="text-gray-400 text-sm mb-2">Org Avg Score</p>
-                    <div className={`text-5xl font-bold mb-1 ${scoreColor(insights?.avgProductivityScore)}`}>
-                        {insights?.avgProductivityScore ?? '—'}
+            {/* Top Stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.85rem' }} className="stagger">
+                <div style={{
+                    background: 'var(--accent-purple)', borderRadius: '20px', padding: '1.5rem',
+                    display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                    position: 'relative', overflow: 'hidden',
+                }}>
+                    <div style={{ position: 'absolute', right: '-1rem', top: '-1rem', opacity: 0.1, transform: 'rotate(15deg)' }}>
+                        <BrainCircuit size={140} />
                     </div>
-                    <p className="text-gray-500 text-xs">{insights?.totalAnalyzed} employees analyzed</p>
-                </div>
-                <div className="card p-5">
-                    <p className="text-gray-400 text-sm mb-3">High Performers</p>
-                    <p className="text-3xl font-bold text-green-400">{insights?.highPerformers?.length ?? 0}</p>
-                    <p className="text-gray-500 text-xs mt-1">Score &gt; 80</p>
-                </div>
-                <div className="card p-5">
-                    <p className="text-gray-400 text-sm mb-3">Needs Attention</p>
-                    <p className="text-3xl font-bold text-red-400">{insights?.lowPerformers?.length ?? 0}</p>
-                    <p className="text-gray-500 text-xs mt-1">Score &lt; 50 — intervention suggested</p>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* High Performers */}
-                <div className="card p-5">
-                    <h2 className="section-title mb-4 flex items-center gap-2">
-                        <Trophy className="w-5 h-5 text-green-400" /> High Performers
-                    </h2>
-                    {insights?.highPerformers?.length === 0 ? (
-                        <p className="text-gray-500 text-sm">No high performers yet</p>
-                    ) : (
-                        <div className="space-y-2">
-                            {insights?.highPerformers?.map(emp => (
-                                <div key={emp.id} className="flex items-center justify-between p-3 rounded-lg bg-green-500/5 border border-green-500/20">
-                                    <div>
-                                        <p className="text-white text-sm font-medium">{emp.name}</p>
-                                        <p className="text-gray-400 text-xs">{emp.department}</p>
-                                    </div>
-                                    <div className="bg-green-500/20 text-green-400 border border-green-500/30 text-xs font-bold px-2.5 py-1 rounded-full">
-                                        {emp.score}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Low Performers */}
-                <div className="card p-5">
-                    <h2 className="section-title mb-4 flex items-center gap-2">
-                        <AlertTriangle className="w-5 h-5 text-red-400" /> Needs Intervention
-                    </h2>
-                    {insights?.lowPerformers?.length === 0 ? (
-                        <p className="text-gray-500 text-sm">No low performers — great!</p>
-                    ) : (
-                        <div className="space-y-2">
-                            {insights?.lowPerformers?.map(emp => (
-                                <div key={emp.id} className="flex items-center justify-between p-3 rounded-lg bg-red-500/5 border border-red-500/20">
-                                    <div>
-                                        <p className="text-white text-sm font-medium">{emp.name}</p>
-                                        <p className="text-gray-400 text-xs">{emp.department}</p>
-                                    </div>
-                                    <div className="bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold px-2.5 py-1 rounded-full">
-                                        {emp.score}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Department Breakdown */}
-            <div className="card p-5">
-                <h2 className="section-title mb-4 flex items-center gap-2">
-                    <PieChart className="w-5 h-5 text-indigo-400" /> Department Breakdown
-                </h2>
-                {insights?.departmentBreakdown?.length === 0 ? (
-                    <p className="text-gray-500 text-sm">No data yet</p>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="text-gray-400 border-b border-gray-700">
-                                    <th className="text-left py-2 pr-4">Department</th>
-                                    <th className="text-left py-2 pr-4">Employees</th>
-                                    <th className="text-left py-2 pr-4">Avg Score</th>
-                                    <th className="text-left py-2">Bar</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {insights?.departmentBreakdown?.map(dept => (
-                                    <tr key={dept.department} className="border-b border-gray-700/50">
-                                        <td className="py-3 pr-4 text-white font-medium">{dept.department}</td>
-                                        <td className="py-3 pr-4 text-gray-400">{dept.employeeCount}</td>
-                                        <td className={`py-3 pr-4 font-semibold ${scoreColor(dept.avgScore)}`}>{dept.avgScore}</td>
-                                        <td className="py-3">
-                                            <div className="w-full max-w-[120px] bg-gray-700 rounded-full h-1.5">
-                                                <div
-                                                    className={`h-1.5 rounded-full ${dept.avgScore >= 80 ? 'bg-green-500' : dept.avgScore >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                                                    style={{ width: `${dept.avgScore}%` }}
-                                                />
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <p style={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'rgba(0,0,0,0.6)', marginBottom: '0.5rem' }}>
+                        Org Average Score
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '3.5rem', fontWeight: 900, color: '#111', letterSpacing: '-0.05em', lineHeight: 1 }}>
+                            {data.averageScore}
+                        </span>
+                        <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'rgba(0,0,0,0.5)' }}>/100</span>
                     </div>
-                )}
-            </div>
+                </div>
 
-            {/* Smart Assignment */}
-            <div className="card p-5">
-                <h2 className="section-title mb-1 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-amber-400" /> Smart Task Assignment
-                </h2>
-                <p className="text-gray-400 text-sm mb-4">AI recommends the best employees for a task based on skills and performance</p>
-
-                <form onSubmit={handleSmartAssign} className="flex gap-3 mb-5">
-                    <input
-                        className="input-field flex-1"
-                        placeholder="Enter a task title... e.g. 'Build React Dashboard'"
-                        value={taskTitle}
-                        onChange={e => setTaskTitle(e.target.value)}
-                    />
-                    <button type="submit" disabled={searching} className="btn-primary whitespace-nowrap">
-                        {searching ? 'Searching...' : 'Find Best Match'}
-                    </button>
-                </form>
-
-                {recommendations.length > 0 && (
-                    <div className="space-y-3">
-                        <p className="text-gray-400 text-sm">Top recommendations for: <span className="text-white">"{taskTitle}"</span></p>
-                        {recommendations.map((emp, i) => (
-                            <div key={emp.id} className="flex items-start gap-4 p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/20 hover:bg-indigo-500/10 transition-colors">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${i === 0 ? 'bg-yellow-500 text-yellow-900' : i === 1 ? 'bg-gray-400 text-gray-900' : 'bg-amber-700 text-amber-100'
-                                    }`}>
-                                    {i + 1}
+                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: '20px', padding: '1.5rem' }}>
+                    <h2 style={{ fontSize: '0.9rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                        <Trophy size={16} color="var(--accent-green)" /> High Performers
+                    </h2>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {data.highPerformers?.length ? data.highPerformers.map((emp, i) => (
+                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 600 }}>{emp.name}</p>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{emp.role}</p>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-white font-medium">{emp.name}</span>
-                                        <span className="text-gray-400 text-xs">·</span>
-                                        <span className="text-gray-400 text-xs">{emp.role}</span>
-                                    </div>
-                                    <p className="text-gray-400 text-xs mt-1">{emp.reason}</p>
-                                    <div className="flex flex-wrap gap-1 mt-2">
-                                        {emp.skills.slice(0, 4).map(s => (
-                                            <span key={s} className="bg-indigo-500/20 text-indigo-300 text-xs px-2 py-0.5 rounded-full border border-indigo-500/30">{s}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div className="text-right flex-shrink-0">
-                                    <div className="text-indigo-400 font-bold text-sm">Score: {emp.score}</div>
-                                    <div className="text-gray-500 text-xs">{emp.completedTasks} done</div>
-                                </div>
+                                <span style={{ fontWeight: 800, color: 'var(--accent-green)', fontSize: '0.9rem' }}>{emp.score}</span>
                             </div>
-                        ))}
+                        )) : <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No data</p>}
                     </div>
-                )}
+                </div>
+
+                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: '20px', padding: '1.5rem' }}>
+                    <h2 style={{ fontSize: '0.9rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                        <AlertCircle size={16} color="var(--accent-red)" /> Needs Attention
+                    </h2>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {data.needsAttention?.length ? data.needsAttention.map((emp, i) => (
+                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 600 }}>{emp.name}</p>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{emp.role}</p>
+                                </div>
+                                <span style={{ fontWeight: 800, color: 'var(--accent-red)', fontSize: '0.9rem' }}>{emp.score}</span>
+                            </div>
+                        )) : <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No data</p>}
+                    </div>
+                </div>
+            </div>
+
+            {/* Smart Task Assignment Tool */}
+            <div style={{
+                background: 'var(--bg-card)', border: '1px solid var(--border-default)',
+                borderRadius: '20px', padding: '1.5rem',
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '10px', background: 'rgba(61,49,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-blue)' }}>
+                        <Wand2 size={16} />
+                    </div>
+                    <div>
+                        <h2 style={{ fontSize: '1rem', fontWeight: 700, letterSpacing: '-0.02em' }}>Smart Assignment</h2>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>AI matching across your org's skills</p>
+                    </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', md: { gridTemplateColumns: 'minmax(300px, 1fr) 1.5fr' } }}>
+                    <form onSubmit={handleSmartAssign} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                        <textarea className="field" placeholder="Describe the task (e.g. 'Build a React and Node.js dashboard backend')"
+                            style={{ height: 110, resize: 'none' }}
+                            value={taskDesc} onChange={e => setTaskDesc(e.target.value)} required />
+                        <button type="submit" disabled={assignLoading} className="btn btn-primary" style={{ alignSelf: 'flex-start' }}>
+                            {assignLoading ? <LoadingSpinner size="sm" text="" /> : <Target size={14} />}
+                            {assignLoading ? 'Analyzing…' : 'Find Best Match'}
+                        </button>
+                    </form>
+
+                    {/* Results */}
+                    {assignResults && (
+                        <div className="animate-fadeIn" style={{
+                            background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-strong)',
+                            borderRadius: '14px', padding: '1.25rem',
+                        }}>
+                            <h3 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-secondary)' }}>Top Recommendations:</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                                {assignResults.recommendations.map((rec, i) => (
+                                    <div key={i} style={{
+                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                        background: 'var(--bg-base)', padding: '0.85rem 1rem', borderRadius: '10px',
+                                        border: i === 0 ? '1px solid var(--accent-blue)' : '1px solid var(--border-default)',
+                                    }}>
+                                        <div>
+                                            <p style={{ fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                {rec.employee.name}
+                                                {i === 0 && <span className="tag tag-blue" style={{ fontSize: '0.6rem', padding: '0.1rem 0.4rem' }}>Best Match</span>}
+                                            </p>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>{rec.employee.role}</p>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{ display: 'block', fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent-blue)', letterSpacing: '-0.03em' }}>
+                                                {rec.matchScore}%
+                                            </span>
+                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>match</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Dept Breakdown */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: '20px', padding: '1.5rem' }}>
+                <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.25rem' }}>Department Performance</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.85rem' }}>
+                    {data.departmentScores?.map(dept => (
+                        <div key={dept.department} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '14px', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{dept.department}</span>
+                            <span style={{ fontSize: '1.2rem', fontWeight: 800, color: scoreColor(dept.avgScore) }}>{Math.round(dept.avgScore)}</span>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     )

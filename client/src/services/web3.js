@@ -42,7 +42,7 @@ export async function logTaskOnChain(taskId, employeeId) {
     const data = ethers.hexlify(ethers.toUtf8Bytes(payload))
 
     const tx = await signer.sendTransaction({
-        to: address, // self transaction to log on chain
+        to: '0x000000000000000000000000000000000000dEaD', // Burn address to accept arbitrary data logs
         value: 0n,
         data,
     })

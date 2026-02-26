@@ -5,7 +5,7 @@ import StatCard from '../components/StatCard'
 import StatusBadge from '../components/StatusBadge'
 import PriorityBadge from '../components/PriorityBadge'
 import LoadingSpinner from '../components/LoadingSpinner'
-import { Users, CheckCircle, Clock, Zap, Target, Trophy } from 'lucide-react'
+import { Users, CheckCircle, Clock, Zap, Target } from 'lucide-react'
 
 export default function Dashboard() {
     const [data, setData] = useState(null)
@@ -17,111 +17,145 @@ export default function Dashboard() {
             const res = await getDashboard()
             setData(res.data)
             setError('')
-        } catch (err) {
-            setError('Failed to load dashboard data')
-        } finally {
-            setLoading(false)
-        }
+        } catch { setError('Failed to load dashboard') }
+        finally { setLoading(false) }
     }, [])
 
     useEffect(() => {
         fetchData()
-        const interval = setInterval(fetchData, 30000)
-        return () => clearInterval(interval)
+        const iv = setInterval(fetchData, 30000)
+        return () => clearInterval(iv)
     }, [fetchData])
 
-    if (loading) return <LoadingSpinner text="Loading dashboard..." />
-    if (error) return <div className="text-center text-red-400 py-10">{error}</div>
+    if (loading) return <LoadingSpinner text="Loading dashboard…" />
+    if (error && !data) return <div style={{ color: 'var(--accent-red)', textAlign: 'center', padding: '3rem' }}>{error}</div>
 
-    const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'
+    const fmt = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'
 
     return (
-        <div className="space-y-6 animate-fadeIn">
+        <div className="animate-fadeUp" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* Page header */}
             <div>
-                <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-                <p className="text-gray-400 text-sm mt-1">Organization overview — auto-refreshes every 30s</p>
+                <p className="eyebrow" style={{ marginBottom: '0.35rem' }}>Overview</p>
+                <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.04em' }}>Dashboard</h1>
             </div>
 
-            {/* Stat Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                <StatCard title="Total Employees" value={data?.totalEmployees} icon={<Users className="w-5 h-5" />} color="gray" />
-                <StatCard title="Active Employees" value={data?.activeEmployees} icon={<CheckCircle className="w-5 h-5" />} color="gray" />
-                <StatCard title="Assigned Tasks" value={data?.assignedTasks} icon={<Target className="w-5 h-5" />} color="gray" />
-                <StatCard title="In Progress" value={data?.inProgressTasks} icon={<Clock className="w-5 h-5" />} color="gray" />
-                <StatCard title="Completed" value={data?.completedTasks} icon={<Zap className="w-5 h-5" />} color="gray" />
+            {/* Bento stat grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.85rem' }}
+                className="stagger">
+                <StatCard title="Employees" value={data?.totalEmployees} icon={<Users size={16} />} accent="blue" />
+                <StatCard title="Active" value={data?.activeEmployees} icon={<CheckCircle size={16} />} accent="default" />
+                <StatCard title="Assigned" value={data?.assignedTasks} icon={<Target size={16} />} accent="default" />
+                <StatCard title="In Progress" value={data?.inProgressTasks} icon={<Clock size={16} />} accent="yellow" />
+                <StatCard title="Completed" value={data?.completedTasks} icon={<Zap size={16} />} accent="green" />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Recent Tasks */}
-                <div className="lg:col-span-2 card p-5">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="section-title">Recent Tasks</h2>
-                        <Link to="/tasks" className="text-indigo-400 hover:text-indigo-300 text-sm">View all →</Link>
-                    </div>
-                    {data?.recentTasks?.length === 0 ? (
-                        <div className="text-center text-gray-500 py-8">No tasks yet</div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="text-gray-400 border-b border-gray-700">
-                                        <th className="text-left py-2 pr-4">Task</th>
-                                        <th className="text-left py-2 pr-4">Employee</th>
-                                        <th className="text-left py-2 pr-4">Status</th>
-                                        <th className="text-left py-2">Priority</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {data?.recentTasks?.map((task) => (
-                                        <tr key={task.id} className="border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors">
-                                            <td className="py-2.5 pr-4">
-                                                <span className="text-white font-medium truncate max-w-[150px] block">{task.title}</span>
-                                            </td>
-                                            <td className="py-2.5 pr-4 text-gray-300">{task.employee?.name || '—'}</td>
-                                            <td className="py-2.5 pr-4"><StatusBadge status={task.status} /></td>
-                                            <td className="py-2.5"><PriorityBadge priority={task.priority} /></td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+            {/* Bottom grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.85rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.85rem' }}>
+                    {/* Recent Tasks */}
+                    <div style={{
+                        background: 'var(--bg-card)', border: '1px solid var(--border-default)',
+                        borderRadius: '20px', padding: '1.5rem',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                            <div>
+                                <p className="eyebrow" style={{ marginBottom: '0.2rem' }}>Latest</p>
+                                <h2 style={{ fontSize: '1rem', fontWeight: 700, letterSpacing: '-0.02em' }}>Recent Tasks</h2>
+                            </div>
+                            <Link to="/tasks" style={{
+                                fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)',
+                                border: '1px solid var(--border-default)', borderRadius: '8px',
+                                padding: '0.35rem 0.75rem', transition: 'all 0.15s',
+                            }}>View all</Link>
                         </div>
-                    )}
+
+                        {!data?.recentTasks?.length ? (
+                            <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem', fontSize: '0.875rem' }}>No tasks yet</p>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                                {data.recentTasks.map((task, i) => (
+                                    <div key={task.id} style={{
+                                        display: 'flex', alignItems: 'center',
+                                        gap: '1rem', padding: '0.85rem 0',
+                                        borderBottom: i < data.recentTasks.length - 1 ? '1px solid var(--border-default)' : 'none',
+                                    }}>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <p style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {task.title}
+                                            </p>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                                                {task.employee?.name || '—'}
+                                            </p>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
+                                            <StatusBadge status={task.status} />
+                                            <PriorityBadge priority={task.priority} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Top Performers */}
-                <div className="card p-5">
-                    <h2 className="section-title mb-4">Top Performers</h2>
-                    {data?.topPerformers?.length === 0 ? (
-                        <div className="text-center text-gray-500 py-8">No data yet</div>
+                <div style={{
+                    background: 'var(--accent-blue)', borderRadius: '20px', padding: '1.5rem',
+                    position: 'relative', overflow: 'hidden',
+                }}>
+                    {/* Decorative shapes */}
+                    <div style={{ position: 'absolute', top: '1rem', right: '1rem', width: 60, height: 60, background: 'rgba(255,255,255,0.1)', borderRadius: '12px', transform: 'rotate(20deg)' }} />
+                    <div style={{ position: 'absolute', bottom: '1rem', right: '3.5rem', width: 35, height: 35, background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
+
+                    <div style={{ marginBottom: '1.25rem' }}>
+                        <p style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)' }}>
+                            Top performers
+                        </p>
+                        <h2 style={{ fontSize: '1rem', fontWeight: 700, letterSpacing: '-0.02em', color: '#fff', marginTop: '0.2rem' }}>
+                            Leaders this cycle
+                        </h2>
+                    </div>
+
+                    {!data?.topPerformers?.length ? (
+                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>No data yet</p>
                     ) : (
-                        <div className="space-y-3">
-                            {data?.topPerformers?.map((emp, i) => (
-                                <Link
-                                    key={emp.id}
-                                    to={`/employees/${emp.id}`}
-                                    className="flex items-center gap-3 p-3 rounded-lg bg-gray-700/40 hover:bg-gray-700/70 transition-colors group"
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                            {data.topPerformers.map((emp, i) => (
+                                <Link key={emp.id} to={`/employees/${emp.id}`} style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                    background: 'rgba(255,255,255,0.1)', borderRadius: '12px',
+                                    padding: '0.65rem 0.85rem', transition: 'background 0.15s',
+                                    textDecoration: 'none',
+                                }}
+                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.18)'}
+                                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
                                 >
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${i === 0 ? 'bg-yellow-500 text-yellow-900' :
-                                        i === 1 ? 'bg-gray-400 text-gray-900' :
-                                            'bg-amber-700 text-amber-100'
-                                        }`}>
-                                        {i + 1}
+                                    <div style={{
+                                        width: 28, height: 28, borderRadius: '8px', flexShrink: 0,
+                                        background: i === 0 ? 'var(--accent-yellow)' : i === 1 ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: '0.72rem', fontWeight: 800,
+                                        color: i === 0 ? '#111' : '#fff',
+                                    }}>{i + 1}</div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <p style={{ fontSize: '0.84rem', fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {emp.name}
+                                        </p>
+                                        <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)' }}>{emp.role}</p>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-white text-sm font-medium truncate group-hover:text-indigo-300 transition-colors">{emp.name}</p>
-                                        <p className="text-gray-400 text-xs truncate">{emp.role}</p>
-                                    </div>
-                                    <div className="text-right flex-shrink-0">
-                                        <span className="text-gray-300 font-semibold text-sm">{emp.completedTasks}</span>
-                                        <p className="text-gray-500 text-xs">done</p>
+                                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'rgba(255,255,255,0.8)' }}>
+                                        {emp.completedTasks} done
                                     </div>
                                 </Link>
                             ))}
                         </div>
                     )}
-                    <Link to="/employees" className="block mt-4 text-center text-indigo-400 hover:text-indigo-300 text-sm">
-                        View all employees →
-                    </Link>
+
+                    <Link to="/employees" style={{
+                        display: 'block', marginTop: '1rem', fontSize: '0.78rem', fontWeight: 600,
+                        color: 'rgba(255,255,255,0.65)', textAlign: 'center',
+                    }}>View all employees</Link>
                 </div>
             </div>
         </div>
