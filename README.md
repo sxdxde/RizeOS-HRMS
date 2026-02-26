@@ -2,6 +2,15 @@
 
 A full-stack AI-powered Human Resource Management System built as a 3-day intern assessment project.
 
+<div align="center">
+  <img src="./img/Screenshot%202026-02-26%20at%2010.03.13%E2%80%AFPM.png" alt="Dashboard" width="49%">
+  <img src="./img/Screenshot%202026-02-26%20at%2010.03.25%E2%80%AFPM.png" alt="Employees" width="49%">
+</div>
+<div align="center">
+  <img src="./img/Screenshot%202026-02-26%20at%2010.03.29%E2%80%AFPM.png" alt="Tasks" width="49%">
+  <img src="./img/Screenshot%202026-02-26%20at%2010.03.38%E2%80%AFPM.png" alt="Insights" width="49%">
+</div>
+
 ## Tech Stack
 
 | Layer | Technology |
