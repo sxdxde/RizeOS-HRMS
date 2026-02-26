@@ -1,6 +1,7 @@
 # Mini AI-HRMS — Workforce Intelligence Platform
 
 > **RizeOS Intern Assessment Submission**
+> https://rize-os-hrms-assessment.vercel.app/
 > Demonstrating clean architecture, practical AI integration, Web3 workforce verification readiness, product-level scalability awareness, and ownership-driven execution.
 
 ---
