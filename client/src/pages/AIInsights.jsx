@@ -134,7 +134,7 @@ export default function AIInsights() {
                         }}>
                             <h3 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-secondary)' }}>Top Recommendations:</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                                {assignResults.recommendations.map((rec, i) => (
+                                {assignResults.map((rec, i) => (
                                     <div key={i} style={{
                                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                                         background: 'var(--bg-base)', padding: '0.85rem 1rem', borderRadius: '10px',
@@ -142,16 +142,16 @@ export default function AIInsights() {
                                     }}>
                                         <div>
                                             <p style={{ fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                {rec.employee.name}
+                                                {rec.name}
                                                 {i === 0 && <span className="tag tag-blue" style={{ fontSize: '0.6rem', padding: '0.1rem 0.4rem' }}>Best Match</span>}
                                             </p>
-                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>{rec.employee.role}</p>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>{rec.role} · {rec.reason || `Score: ${rec.score}`}</p>
                                         </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <span style={{ display: 'block', fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent-blue)', letterSpacing: '-0.03em' }}>
-                                                {rec.matchScore}%
+                                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
+                                            <span style={{ display: 'block', fontSize: '1.2rem', fontWeight: 900, color: 'var(--accent-blue)', letterSpacing: '-0.03em', lineHeight: 1 }}>
+                                                {rec.score}
                                             </span>
-                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>match</span>
+                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '0.2rem', textTransform: 'uppercase' }}>Score</span>
                                         </div>
                                     </div>
                                 ))}
